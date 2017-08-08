@@ -6,7 +6,8 @@ import unittest2
 import os, datetime
 from xlrd import open_workbook
 from citi.utility import get_current_directory
-from citi.open_citi import open_citi, read_holding_fields, read_holding
+from citi.open_citi import open_citi, read_holding_fields, read_holding, \
+                            read_grand_total
 
 
 
@@ -33,6 +34,15 @@ class TestCiti(unittest2.TestCase):
         self.assertEqual(fields[16], 'FX Rate')
 
 
+
+    def test_read_grand_total(self):
+        file_name = os.path.join(get_current_directory(), 'samples', 'STA 20170407.xls')
+        wb = open_workbook(filename=file_name)
+        ws = wb.sheet_by_name('Holdings Report')
+        fields = read_holding_fields(ws, 0, 1)
+        self.assertAlmostEqual(read_grand_total(ws, 0, 1, fields), 70300000)
+
+              
 
     def test_read_holding(self):
         file_name = os.path.join(get_current_directory(), 'samples', 'STA 20170407.xls')

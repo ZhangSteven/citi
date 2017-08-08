@@ -7,6 +7,10 @@
 from .utility import logger
 
 
+class InconsistentGrandTotal(Exception):
+	pass
+
+
 
 def open_citi(filename, port_values, output_dir, output_prefix):
 	"""
@@ -18,7 +22,7 @@ def open_citi(filename, port_values, output_dir, output_prefix):
 	wb = open_workbook(filename=file_name)
 	ws = wb.sheet_by_name('Holdings Report')
 	read_holding(ws, port_values)
-	# validate_holding(port_values)
+	validate_holding(ws, port_values)
 
 	# cash reading
 
@@ -44,19 +48,22 @@ def read_holding(ws, port_values):
 		row = row + 1
 	# end of while loop
 
+	validate_holding(port_values, read_grand_total(ws, 0, column, fields))
+
 
 
 def read_position(ws, row, column, fields):
 	"""
 	Read a position on a particular row
 	"""
+	logger.debug('read_position(): at row {0} column {1}'.format(row, column))
 	position = {}
 	for field in fields:
 		position[field] = ws.cell_value(row, column)
 		column = column + 1
 
 	return position
-	
+
 
 
 def read_holding_fields(ws, row, column):
@@ -72,3 +79,37 @@ def read_holding_fields(ws, row, column):
 	return fields
 
 
+
+def validate_holding(port_values, total_shares_par):
+	"""
+	Read the grand total numbers in the holding section, use this to
+	validate the holding.
+	"""
+	total_quantity = 0
+	for position in port_values['holding']:
+		total_quantity = total_quantity + position['Shares/Par']
+
+	if abs(total_quantity - total_shares_par) > 0.01:
+		logger.error('validate_holding(): calculated total quantity {0} \
+			is different from grand total {1}'.format(total_quantity, total_shares_par))
+		raise InconsistentGrandTotal()
+
+
+
+def read_grand_total(ws, row, column, fields):
+	"""
+	Read the grand total number of shares/par for the holdings.
+
+	row: start to search grand total from which row
+	column: which column does the fields start
+	"""
+	while row < ws.nrows:
+		cell_value = ws.cell_value(row, 0)
+		if isinstance(cell_value, str) and cell_value.startswith('Grand Total'):
+			for field in fields:
+				if field == 'Shares/Par':
+					return ws.cell_value(row, column)
+
+				column = column + 1
+
+		row = row + 1
