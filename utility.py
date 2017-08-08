@@ -3,14 +3,8 @@
 # from config_logging package, provides a config object (from config file)
 # and a logger object (logging to a file).
 # 
-
 import configparser, os
 from config_logging.file_logger import get_file_logger
-
-
-
-class InvalidDatamode(Exception):
-	pass
 
 
 
@@ -28,7 +22,12 @@ def get_current_directory():
 
 def _load_config():
 	"""
-	Read the config file, convert it to a config object.
+	Read the config file, convert it to a config object. The config file is 
+	supposed to be located in the same directory as the py files, and the
+	default name is "config".
+
+	Caution: uncaught exceptions will happen if the config files are missing
+	or named incorrectly.
 	"""
 	cfg = configparser.ConfigParser()
 	cfg.read(os.path.join(get_current_directory(), 'citi.config'))
@@ -42,27 +41,14 @@ if not 'config' in globals():
 
 
 
-# def get_log_directory():
-# 	"""
-# 	The directory where the log file resides.
-# 	"""
-# 	global config
-# 	directory = config['logging']['directory']
-# 	if directory == '':
-# 		directory = get_current_path()
-
-# 	return directory
-
-
-
 def _setup_logging():
 	global config
-	directory = config['logging']['directory']
-	if directory == '':
-		directory = get_current_directory()
-    fn = os.path.join(directory, config['logging']['log_file'])
-    log_level = config['logging']['log_level']
-    return get_file_logger(fn, log_level)
+	if config['logging']['directory'] == '':
+		return get_file_logger(os.path.join(get_current_directory(), 'citi.log'),
+								config['logging']['log_level'])
+	else:
+		return get_file_logger(os.path.join(config['logging']['directory'], 'citi.log'),
+								config['logging']['log_level'])
 
 
 
@@ -77,24 +63,8 @@ def get_datemode():
 	Read datemode from the config object and return it (in integer)
 	"""
 	global config
-	d = config['excel']['datemode']
 	try:
-		datemode = int(d)
+		return int(config['excel']['datemode'])
 	except:
-		logger.error('get_datemode(): invalid datemode value: {0}'.format(d))
-		raise InvalidDatamode()
-
-	return datemode
-
-
-
-def get_input_directory():
-	"""
-	Where the input files reside.
-	"""
-	global config
-	directory = config['input']['directory']
-	if directory == '':
-		directory = get_current_directory()
-
-	return directory
+		logger.exception('get_datemode():')
+		raise
