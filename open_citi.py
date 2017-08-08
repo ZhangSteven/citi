@@ -4,8 +4,8 @@
 # output csv files for Geneva reconciliation.
 # 
 
-from .utility import logger
-from xlrd import open_workbook
+from .utility import logger, get_datemode
+from xlrd import open_workbook, xldate
 
 
 
@@ -22,6 +22,9 @@ def open_citi(filename, port_values, output_dir, output_prefix):
 	logger.info('open_citi(): {0}'.format(filename))
 	
 	wb = open_workbook(filename=filename)
+	ws = wb.sheet_by_name('Index Page')
+	port_values['portfolio_id'] = get_portfolio_id(ws)
+
 	ws = wb.sheet_by_name('Holdings Report')
 	fields = read_fields(ws, 0, 1)
 	port_values['holding'] = read_holding(ws, fields, 1, 1)
@@ -29,10 +32,15 @@ def open_citi(filename, port_values, output_dir, output_prefix):
 
 	ws = wb.sheet_by_name('Accrued Interest on Cash Accoun')
 	fields = read_fields(ws, 0, 1)
-	port_values['cash'] = read_holding(ws, fields, 1, 1)
+	port_values['cash'] = map_cash_date(read_holding(ws, fields, 1, 1))
 	validate_holding(port_values['cash'], ws, 0, 1, fields, 'Accounting Market Value (VCY)')
 
-	# write output csv
+	return write_csv(port_values, output_dir, output_prefix)
+
+
+
+def get_portfolio_id(ws):
+	return ''
 
 
 
@@ -51,6 +59,14 @@ def read_holding(ws, fields, row, column):
 	# end of while loop
 
 	return holding
+
+
+
+def map_cash_date(cash_accounts):
+	for account in cash_accounts:
+		account['As Of'] = xldate.xldate_as_datetime(account['As Of'], get_datemode())
+
+	return cash_accounts
 
 
 
@@ -84,8 +100,8 @@ def read_fields(ws, row, column):
 
 def validate_holding(holding, ws, row, column, fields, key_field):
 	"""
-	Read the grand total numbers in the holding section, use this to
-	validate the holding.
+	Read the grand total number for the key_field in the holding section, 
+	then use that number to validate the holding.
 	"""
 	total = 0
 	for position in holding:
@@ -116,3 +132,30 @@ def read_grand_total(ws, row, column, fields, key_field):
 				column = column + 1
 
 		row = row + 1
+
+
+
+def create_csv_file_name(date_string, output_dir, file_prefix, file_suffix):
+	"""
+	Create the output csv file name based on the date string, as well as
+	the file suffix: cash, afs_positions, or htm_positions
+	"""
+	csv_filename = "".join([file_prefix, date_string, '_', file_suffix, '.csv'])
+	return os.path.join(output_dir, csv_filename)
+
+
+
+def write_csv(port_values, output_dir, output_prefix):
+	cash_file = write_cash_csv(port_values, output_dir, output_prefix)
+	position_file = write_holding_csv(port_values, output_dir, output_prefix)
+	return [cash_file, position_file]
+
+
+
+def write_cash_csv(port_values, output_dir, output_prefix):
+	pass
+
+
+
+def write_holding_csv(port_values, output_dir, output_prefix):
+	pass

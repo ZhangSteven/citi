@@ -7,7 +7,7 @@ import os, datetime
 from xlrd import open_workbook
 from citi.utility import get_current_directory
 from citi.open_citi import open_citi, read_fields, read_holding, \
-                            read_grand_total
+                            read_grand_total, map_cash_date
 
 
 
@@ -62,7 +62,7 @@ class TestCiti(unittest2.TestCase):
         wb = open_workbook(filename=file_name)
         ws = wb.sheet_by_name('Accrued Interest on Cash Accoun')
         fields = read_fields(ws, 0, 1)
-        cash = read_holding(ws, fields, 1, 1)
+        cash = map_cash_date(read_holding(ws, fields, 1, 1))
         self.assertEqual(len(cash), 1)
         self.verify_cash(cash[0])
 
@@ -156,3 +156,4 @@ class TestCiti(unittest2.TestCase):
         self.assertAlmostEqual(position['Accrued Interest'], 0)
         self.assertAlmostEqual(position['Exchange Rate'], 0.144783)
         self.assertAlmostEqual(position['Accounting Market Value (VCY)'], 569515161.59)
+        self.assertEqual(position['As Of'], datetime.datetime(2017,4,10))
