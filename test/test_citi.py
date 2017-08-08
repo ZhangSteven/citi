@@ -6,7 +6,7 @@ import unittest2
 import os, datetime
 from xlrd import open_workbook
 from citi.utility import get_current_directory
-from citi.open_citi import open_citi, read_holding_fields, read_holding, \
+from citi.open_citi import open_citi, read_fields, read_holding, \
                             read_grand_total
 
 
@@ -18,11 +18,11 @@ class TestCiti(unittest2.TestCase):
 
 
 
-    def test_read_holding_fields(self):
+    def test_read_fields(self):
         file_name = os.path.join(get_current_directory(), 'samples', 'STA 20170407.xls')
         wb = open_workbook(filename=file_name)
         ws = wb.sheet_by_name('Holdings Report')
-        fields = read_holding_fields(ws, 0, 1)
+        fields = read_fields(ws, 0, 1)
         self.assertEqual(len(fields), 17)
         self.assertEqual(fields[0], 'Asset Group')
         self.assertEqual(fields[1], 'Security ID')
@@ -39,23 +39,51 @@ class TestCiti(unittest2.TestCase):
         file_name = os.path.join(get_current_directory(), 'samples', 'STA 20170407.xls')
         wb = open_workbook(filename=file_name)
         ws = wb.sheet_by_name('Holdings Report')
-        fields = read_holding_fields(ws, 0, 1)
-        self.assertAlmostEqual(read_grand_total(ws, 0, 1, fields), 70300000)
+        fields = read_fields(ws, 0, 1)
+        self.assertAlmostEqual(read_grand_total(ws, 0, 1, fields, 'Shares/Par'), 70300000)
 
-              
+
 
     def test_read_holding(self):
         file_name = os.path.join(get_current_directory(), 'samples', 'STA 20170407.xls')
         wb = open_workbook(filename=file_name)
         ws = wb.sheet_by_name('Holdings Report')
+        fields = read_fields(ws, 0, 1)
+        holding = read_holding(ws, fields, 1, 1)
+        self.assertEqual(len(holding), 22)
+        self.verify_position1(holding[0])
+        self.verify_position2(holding[1])
+        self.verify_position3(holding[21])
+
+
+
+    def test_read_cash(self):
+        file_name = os.path.join(get_current_directory(), 'samples', 'STA 20170407.xls')
+        wb = open_workbook(filename=file_name)
+        ws = wb.sheet_by_name('Accrued Interest on Cash Accoun')
+        fields = read_fields(ws, 0, 1)
+        cash = read_holding(ws, fields, 1, 1)
+        self.assertEqual(len(cash), 1)
+        self.verify_cash(cash[0])
+
+
+
+    def test_open_citi(self):
+        file_name = os.path.join(get_current_directory(), 'samples', 'STA 20170407.xls')
         port_values = {}
-        read_holding(ws, port_values)
+        output_dir = os.path.join(get_current_directory(), 'samples')
+        output_prefix = 'citi'
+        open_citi(file_name, port_values, output_dir, output_prefix)
         holding = port_values['holding']
         self.assertEqual(len(holding), 22)
         self.verify_position1(holding[0])
         self.verify_position2(holding[1])
         self.verify_position3(holding[21])
 
+        cash = port_values['cash']
+        self.assertEqual(len(cash), 1)
+        self.verify_cash(cash[0])
+        
 
 
     def verify_position1(self, position):
@@ -115,3 +143,16 @@ class TestCiti(unittest2.TestCase):
         self.assertAlmostEqual(position['Position Accounting Market Value (Local CCY)'], 2419219.2)
         self.assertAlmostEqual(position['Accounting Price  (Local CCY)'], 100.8008)
         self.assertAlmostEqual(position['FX Rate'], 6.9068882396)
+
+
+
+    def verify_cash(self, position):
+        """
+        Verify the cash position in samples/STA 20170407.xls
+        """
+        self.assertEqual(len(position), 8)
+        self.assertEqual(position['Local CCY'], 'US DOLLAR')
+        self.assertAlmostEqual(position['Position Accounting Market Value (Local CCY)'], 82456113.64)
+        self.assertAlmostEqual(position['Accrued Interest'], 0)
+        self.assertAlmostEqual(position['Exchange Rate'], 0.144783)
+        self.assertAlmostEqual(position['Accounting Market Value (VCY)'], 569515161.59)
