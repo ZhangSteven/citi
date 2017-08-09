@@ -7,7 +7,8 @@ import os, datetime
 from xlrd import open_workbook
 from citi.utility import get_current_directory
 from citi.open_citi import open_citi, read_fields, read_holding, \
-                            read_grand_total, map_cash_date
+                            read_grand_total, map_cash_date, \
+                            get_portfolio_date
 
 
 
@@ -83,6 +84,9 @@ class TestCiti(unittest2.TestCase):
         cash = port_values['cash']
         self.assertEqual(len(cash), 1)
         self.verify_cash(cash[0])
+
+        self.assertEqual(get_portfolio_date(port_values), datetime.datetime(2017,4,10))
+        self.assertEqual(port_values['portfolio_id'], '40001')
         
 
 

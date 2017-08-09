@@ -12,6 +12,9 @@ from xlrd import open_workbook, xldate
 class InconsistentGrandTotal(Exception):
 	pass
 
+class InvalidPortfolioName(Exception):
+	pass
+
 
 
 def open_citi(filename, port_values, output_dir, output_prefix):
@@ -40,7 +43,24 @@ def open_citi(filename, port_values, output_dir, output_prefix):
 
 
 def get_portfolio_id(ws):
-	return ''
+	"""
+	Get the portfolio name from sheet "Index Page" and map it to a 
+	portfolio id.
+	"""
+	logger.debug('get_portfolio_id()')
+	row = 0
+	while row < ws.nrows:
+		if ws.cell_value(row, 2) == 'Account:':
+			break
+
+		row = row + 1
+	# end of while loop
+
+	if ws.cell_value(row, 3).strip() == 'STA1 - STAR HELIOS PLC-CHINA LIFE':
+		return '40001'
+	else:
+		logger.error('get_portfolio_id(): invalid portfolio name: {0}'.format(ws.cell_value(row, 3).strip()))
+		raise InvalidPortfolioName()
 
 
 
@@ -63,7 +83,10 @@ def read_holding(ws, fields, row, column):
 
 
 def map_cash_date(cash_accounts):
+	logger.debug('map_cash_date(): start')
 	for account in cash_accounts:
+		logger.debug('map_cash_date(): {0}, amount {1}'.\
+						format(account['Local CCY'], account['Position Accounting Market Value (Local CCY)']))
 		account['As Of'] = xldate.xldate_as_datetime(account['As Of'], get_datemode())
 
 	return cash_accounts
@@ -132,6 +155,16 @@ def read_grand_total(ws, row, column, fields, key_field):
 				column = column + 1
 
 		row = row + 1
+
+
+
+def get_portfolio_date(port_values):
+	"""
+	The date of holdings and cash data. Here we assume the date of the cash
+	entries are the same and represent the date of the holdings.
+	"""
+	return port_values['cash'][0]['As Of']
+
 
 
 
