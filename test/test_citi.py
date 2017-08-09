@@ -6,9 +6,9 @@ import unittest2
 import os, datetime
 from xlrd import open_workbook
 from citi.utility import get_current_directory
-from citi.open_citi import open_citi, read_fields, read_holding, \
-                            read_grand_total, update_cash_data, \
+from citi.open_citi import open_citi, read_grand_total, update_cash_data, \
                             get_portfolio_date
+from citi.read_file import read_fields, read_holding
 
 
 
@@ -76,9 +76,9 @@ class TestCiti(unittest2.TestCase):
         file_list = open_citi(file_name, port_values, output_dir, 'star_helios_')
         holding = port_values['holding']
         self.assertEqual(len(holding), 22)
-        self.verify_position1(holding[0])
-        self.verify_position2(holding[1])
-        self.verify_position3(holding[21])
+        self.verify_position1(holding[0], True)
+        self.verify_position2(holding[1], True)
+        self.verify_position3(holding[21], True)
 
         cash = port_values['cash']
         self.assertEqual(len(cash), 1)
@@ -92,11 +92,16 @@ class TestCiti(unittest2.TestCase):
         self.assertEqual(file_list[1], r'C:\Users\steven.zhang\AppData\Local\Programs\Git\git\citi\samples\star_helios_2017-4-10_position.csv')
 
 
-    def verify_position1(self, position):
+
+    def verify_position1(self, position, security_id_updated=False):
         """
         Verify the first postion in samples/STA 20170407.xls
         """
-        self.assertEqual(len(position), 17)
+        if security_id_updated:
+            self.assertEqual(len(position), 18)  # isin field is added
+        else:
+            self.assertEqual(len(position), 17)
+
         self.assertEqual(position['Asset Group'], 'BONDS')
         self.assertEqual(position['Security ID'], 'BDC4MV5')
         self.assertEqual(position['Security Description'], 'LENOVO PERPETUAL LENOVO 5 3/8 PERP')
@@ -109,14 +114,19 @@ class TestCiti(unittest2.TestCase):
         self.assertAlmostEqual(position['Position Accounting Market Value (Local CCY)'], 6908324)
         self.assertAlmostEqual(position['Accounting Price  (Local CCY)'], 101.593)
         self.assertAlmostEqual(position['FX Rate'], 6.9068882396)
+        if security_id_updated:
+            self.assertEqual(position['isin'], 'XS1575529539')
 
 
 
-    def verify_position2(self, position):
+    def verify_position2(self, position, security_id_updated=False):
         """
         Verify the second postion in samples/STA 20170407.xls
         """
-        self.assertEqual(len(position), 17)
+        if security_id_updated:
+            self.assertEqual(len(position), 18)  # isin field is added
+        else:
+            self.assertEqual(len(position), 17)
         self.assertEqual(position['Asset Group'], '')
         self.assertEqual(position['Security ID'], 'BDF16K0')
         self.assertEqual(position['Security Description'], 'HUARONG FIN II HRAM 4 5/8 06/03/26')
@@ -129,14 +139,19 @@ class TestCiti(unittest2.TestCase):
         self.assertAlmostEqual(position['Position Accounting Market Value (Local CCY)'], 2021662)
         self.assertAlmostEqual(position['Accounting Price  (Local CCY)'], 101.0831)
         self.assertAlmostEqual(position['FX Rate'], 6.9068882396)
+        if security_id_updated:
+            self.assertEqual(position['isin'], 'XS1422790615')
 
 
 
-    def verify_position3(self, position):
+    def verify_position3(self, position, security_id_updated=False):
         """
         Verify the last postion in samples/STA 20170407.xls
         """
-        self.assertEqual(len(position), 17)
+        if security_id_updated:
+            self.assertEqual(len(position), 18)  # isin field is added
+        else:
+            self.assertEqual(len(position), 17)
         self.assertEqual(position['Asset Group'], '')
         self.assertEqual(position['Security ID'], 'XS1587894343')
         self.assertEqual(position['Security Description'], 'TEWOO GROUP TEWOOG 4 5/8 04/06/20')
@@ -149,6 +164,8 @@ class TestCiti(unittest2.TestCase):
         self.assertAlmostEqual(position['Position Accounting Market Value (Local CCY)'], 2419219.2)
         self.assertAlmostEqual(position['Accounting Price  (Local CCY)'], 100.8008)
         self.assertAlmostEqual(position['FX Rate'], 6.9068882396)
+        if security_id_updated:
+            self.assertEqual(position['isin'], 'XS1587894343')
 
 
 

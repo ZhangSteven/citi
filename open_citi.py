@@ -6,6 +6,8 @@
 
 from .utility import logger, get_datemode, convert_datetime_to_string, \
 						get_csv_file_name
+from .lookup import lookup_isin_from_id
+from .read_file import read_holding, read_fields
 from xlrd import open_workbook, xldate
 import csv, os
 
@@ -31,7 +33,7 @@ def open_citi(filename, port_values, output_dir, output_prefix):
 
 	ws = wb.sheet_by_name('Holdings Report')
 	fields = read_fields(ws, 0, 1)
-	port_values['holding'] = read_holding(ws, fields, 1, 1)
+	port_values['holding'] = update_security_id(read_holding(ws, fields, 1, 1))
 	validate_holding(port_values['holding'], ws, 0, 1, fields, 'Shares/Par')
 
 	ws = wb.sheet_by_name('Accrued Interest on Cash Accoun')
@@ -65,27 +67,25 @@ def get_portfolio_id(ws):
 
 
 
-def read_holding(ws, fields, row, column):
+def update_security_id(holding):
 	"""
-	Read holding 
-	"""
-	holding = []
-	while row < ws.nrows:
-		if ws.cell_value(row, 2) == '':	# the first field can be empty
-										# for bond positions
-			break
+	Update security id. As Citibank uses its own id for certain securities,
+	e.g., BF04Y37, BEIPRO 4.375 03/08/20
 
-		holding.append(read_position(ws, row, column, fields))
-		row = row + 1
-	# end of while loop
+	We need to map that id "BF04Y37" to the bond's isin code "XS1562292026".
+	"""
+	logger.debug('update_security_id(): start')
+	for position in holding:
+		position['isin'] = lookup_isin_from_id(position['Security ID'])
 
 	return holding
 
 
 
+
 def update_cash_data(cash_accounts):
 	"""
-	Update certain cash data to other format.
+	Update certain cash fields to other format.
 
 	Local CCY: change to standard representation such as USD, HKD, etc.
 	As Of: change to python datetime format.
@@ -106,34 +106,6 @@ def update_cash_data(cash_accounts):
 			raise
 
 	return cash_accounts
-
-
-
-def read_position(ws, row, column, fields):
-	"""
-	Read a position on a particular row
-	"""
-	logger.debug('read_position(): at row {0} column {1}'.format(row, column))
-	position = {}
-	for field in fields:
-		position[field] = ws.cell_value(row, column)
-		column = column + 1
-
-	return position
-
-
-
-def read_fields(ws, row, column):
-	fields = []
-	while column < ws.ncols:
-		cell_value = ws.cell_value(row, column)
-		if ws.cell_value(row, column) == '':
-			break
-
-		fields.append(cell_value.strip())
-		column = column + 1
-
-	return fields
 
 
 
