@@ -4,9 +4,10 @@
 # output csv files for Geneva reconciliation.
 # 
 
-from .utility import logger, get_datemode
+from .utility import logger, get_datemode, convert_datetime_to_string, \
+						get_csv_file_name
 from xlrd import open_workbook, xldate
-
+import csv, os
 
 
 class InconsistentGrandTotal(Exception):
@@ -35,7 +36,7 @@ def open_citi(filename, port_values, output_dir, output_prefix):
 
 	ws = wb.sheet_by_name('Accrued Interest on Cash Accoun')
 	fields = read_fields(ws, 0, 1)
-	port_values['cash'] = map_cash_date(read_holding(ws, fields, 1, 1))
+	port_values['cash'] = update_cash_data(read_holding(ws, fields, 1, 1))
 	validate_holding(port_values['cash'], ws, 0, 1, fields, 'Accounting Market Value (VCY)')
 
 	return write_csv(port_values, output_dir, output_prefix)
@@ -82,12 +83,27 @@ def read_holding(ws, fields, row, column):
 
 
 
-def map_cash_date(cash_accounts):
-	logger.debug('map_cash_date(): start')
+def update_cash_data(cash_accounts):
+	"""
+	Update certain cash data to other format.
+
+	Local CCY: change to standard representation such as USD, HKD, etc.
+	As Of: change to python datetime format.
+	"""
+	logger.debug('update_cash_data(): start')
+	c_map = {
+		'US DOLLAR':'USD'
+	}
+
 	for account in cash_accounts:
-		logger.debug('map_cash_date(): {0}, amount {1}'.\
+		logger.debug('update_cash_data(): {0}, amount {1}'.\
 						format(account['Local CCY'], account['Position Accounting Market Value (Local CCY)']))
 		account['As Of'] = xldate.xldate_as_datetime(account['As Of'], get_datemode())
+		try:
+			account['Local CCY'] = c_map[account['Local CCY']]
+		except KeyError:
+			logger.error('update_cash_data(): failed to map {0} to standard representation'.format(account['Local CCY']))
+			raise
 
 	return cash_accounts
 
@@ -167,7 +183,6 @@ def get_portfolio_date(port_values):
 
 
 
-
 def create_csv_file_name(date_string, output_dir, file_prefix, file_suffix):
 	"""
 	Create the output csv file name based on the date string, as well as
@@ -186,9 +201,61 @@ def write_csv(port_values, output_dir, output_prefix):
 
 
 def write_cash_csv(port_values, output_dir, output_prefix):
-	pass
+	portfolio_date = convert_datetime_to_string(get_portfolio_date(port_values))
+	file_name = get_csv_file_name(output_dir, output_prefix+portfolio_date, 'cash')
+	logger.debug('write_cash_csv(): {0}'.format(file_name))
+	with open(file_name, 'w', newline='') as csvfile:
+		file_writer = csv.writer(csvfile, delimiter='|')
+		fields = ['currency', 'balance']
+		file_writer.writerow(['portfolio', 'custodian', 'date'] + fields)
+
+		for position in port_values['cash']:
+			row = [port_values['portfolio_id'], 'CITI', portfolio_date]
+			for fld in fields:
+				if fld == 'currency':
+					item = position['Local CCY']
+				elif fld == 'balance':
+					item = position['Position Accounting Market Value (Local CCY)']
+
+				row.append(item)
+
+			file_writer.writerow(row)
+
+	return file_name
 
 
 
 def write_holding_csv(port_values, output_dir, output_prefix):
-	pass
+	portfolio_date = convert_datetime_to_string(get_portfolio_date(port_values))
+	file_name = get_csv_file_name(output_dir, output_prefix+portfolio_date, 'position')
+	logger.debug('write_holding_csv(): {0}'.format(file_name))
+	with open(file_name, 'w', newline='') as csvfile:
+		file_writer = csv.writer(csvfile, delimiter='|')
+
+		# except for name, all fields are mandatory to do a position recon
+		# in Geneva
+		fields = ['geneva_investment_id', 'isin', 'bloomberg_figi', 'name', 
+					'currency', 'quantity']
+		file_writer.writerow(['portfolio', 'custodian', 'date'] + fields)
+
+		for position in port_values['holding']:
+			row = [port_values['portfolio_id'], 'CITI', portfolio_date]
+			for fld in fields:
+				if fld == 'currency':
+					item = position['Curr']
+				elif fld == 'name':
+					item = position['Security Description']
+				elif fld == 'quantity':
+					item = position['Shares/Par']
+				else:
+					try:
+						item = position[fld]
+					except KeyError:
+						item = ''
+
+				row.append(item)
+
+			file_writer.writerow(row)
+		# end of for loop
+
+	return file_name

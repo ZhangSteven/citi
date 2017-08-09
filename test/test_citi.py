@@ -7,7 +7,7 @@ import os, datetime
 from xlrd import open_workbook
 from citi.utility import get_current_directory
 from citi.open_citi import open_citi, read_fields, read_holding, \
-                            read_grand_total, map_cash_date, \
+                            read_grand_total, update_cash_data, \
                             get_portfolio_date
 
 
@@ -63,7 +63,7 @@ class TestCiti(unittest2.TestCase):
         wb = open_workbook(filename=file_name)
         ws = wb.sheet_by_name('Accrued Interest on Cash Accoun')
         fields = read_fields(ws, 0, 1)
-        cash = map_cash_date(read_holding(ws, fields, 1, 1))
+        cash = update_cash_data(read_holding(ws, fields, 1, 1))
         self.assertEqual(len(cash), 1)
         self.verify_cash(cash[0])
 
@@ -73,8 +73,7 @@ class TestCiti(unittest2.TestCase):
         file_name = os.path.join(get_current_directory(), 'samples', 'STA 20170407.xls')
         port_values = {}
         output_dir = os.path.join(get_current_directory(), 'samples')
-        output_prefix = 'citi'
-        open_citi(file_name, port_values, output_dir, output_prefix)
+        file_list = open_citi(file_name, port_values, output_dir, 'star_helios_')
         holding = port_values['holding']
         self.assertEqual(len(holding), 22)
         self.verify_position1(holding[0])
@@ -88,6 +87,9 @@ class TestCiti(unittest2.TestCase):
         self.assertEqual(get_portfolio_date(port_values), datetime.datetime(2017,4,10))
         self.assertEqual(port_values['portfolio_id'], '40001')
         
+        self.assertEqual(len(file_list), 2)
+        self.assertEqual(file_list[0], r'C:\Users\steven.zhang\AppData\Local\Programs\Git\git\citi\samples\star_helios_2017-4-10_cash.csv')
+        self.assertEqual(file_list[1], r'C:\Users\steven.zhang\AppData\Local\Programs\Git\git\citi\samples\star_helios_2017-4-10_position.csv')
 
 
     def verify_position1(self, position):
@@ -155,7 +157,7 @@ class TestCiti(unittest2.TestCase):
         Verify the cash position in samples/STA 20170407.xls
         """
         self.assertEqual(len(position), 8)
-        self.assertEqual(position['Local CCY'], 'US DOLLAR')
+        self.assertEqual(position['Local CCY'], 'USD')
         self.assertAlmostEqual(position['Position Accounting Market Value (Local CCY)'], 82456113.64)
         self.assertAlmostEqual(position['Accrued Interest'], 0)
         self.assertAlmostEqual(position['Exchange Rate'], 0.144783)

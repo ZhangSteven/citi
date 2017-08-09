@@ -68,3 +68,21 @@ def get_datemode():
 	except:
 		logger.exception('get_datemode():')
 		raise
+
+
+
+def convert_datetime_to_string(dt):
+	"""
+	convert a datetime object to string in the format of yyyy-mm-dd.
+	"""
+	return '{0}-{1}-{2}'.format(dt.year, dt.month, dt.day)
+
+
+
+def get_csv_file_name(output_dir, file_prefix, file_suffix):
+	"""
+	Create the output csv file name based on the file name prefix and 
+	suffix.
+	"""
+	csv_filename = "".join([file_prefix, '_', file_suffix, '.csv'])
+	return os.path.join(output_dir, csv_filename)
