@@ -88,8 +88,8 @@ class TestCiti(unittest2.TestCase):
         self.assertEqual(port_values['portfolio_id'], '40001')
         
         self.assertEqual(len(file_list), 2)
-        self.assertEqual(file_list[0], r'C:\Users\steven.zhang\AppData\Local\Programs\Git\git\citi\samples\star_helios_2017-4-10_cash.csv')
-        self.assertEqual(file_list[1], r'C:\Users\steven.zhang\AppData\Local\Programs\Git\git\citi\samples\star_helios_2017-4-10_position.csv')
+        self.assertEqual(file_list[0], os.path.join(get_current_directory(), 'samples', 'star_helios_2017-4-10_cash.csv'))
+        self.assertEqual(file_list[1], os.path.join(get_current_directory(), 'samples', 'star_helios_2017-4-10_position.csv'))
 
 
 
