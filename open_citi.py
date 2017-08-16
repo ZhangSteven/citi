@@ -4,12 +4,15 @@
 # output csv files for Geneva reconciliation.
 # 
 
-from .utility import logger, get_datemode, convert_datetime_to_string, \
+from .utility import get_datemode, convert_datetime_to_string, \
 						get_csv_file_name
 from .lookup import lookup_isin_from_id
 from .read_file import read_holding, read_fields
 from xlrd import open_workbook, xldate
 import csv, os
+import logging
+logger = logging.getLogger(__name__)
+
 
 
 class InconsistentGrandTotal(Exception):

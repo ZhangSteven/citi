@@ -3,10 +3,12 @@
 # Lookup isin code based on citi security id.
 # 
 
-from .utility import logger, get_current_directory
+from .utility import get_current_directory
 from .read_file import read_holding, read_fields
 from xlrd import open_workbook
 import os, re
+import logging
+logger = logging.getLogger(__name__)
 
 
 
@@ -16,6 +18,7 @@ def initialize_isin_table():
 
 	citi code -> isin code
 	"""
+	logger.info('initialize_isin_table(): enter')
 	wb = open_workbook(filename=os.path.join(get_current_directory(), 
 						'samples', 'InvestmentCodeLookup.xlsx'))
 	ws = wb.sheet_by_name('Sheet1')
@@ -25,6 +28,7 @@ def initialize_isin_table():
 	for item in lines:
 		isin_map[item['CITI code']] = item['ISIN/Geneva']
 
+	logger.info('initialize_isin_table(): {0} entries initialized'.format(len(isin_map)))
 	return isin_map
 
 

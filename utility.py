@@ -4,7 +4,6 @@
 # and a logger object (logging to a file).
 # 
 import configparser, os
-from config_logging.file_logger import get_file_logger
 
 
 
@@ -38,23 +37,6 @@ def _load_config():
 # initialized only once when this module is first imported by others
 if not 'config' in globals():
 	config = _load_config()
-
-
-
-def _setup_logging():
-	global config
-	if config['logging']['directory'] == '':
-		return get_file_logger(os.path.join(get_current_directory(), 'citi.log'),
-								config['logging']['log_level'])
-	else:
-		return get_file_logger(os.path.join(config['logging']['directory'], 'citi.log'),
-								config['logging']['log_level'])
-
-
-
-# initialized only once when this module is first imported by others
-if not 'logger' in globals():
-	logger = _setup_logging()
 
 
 

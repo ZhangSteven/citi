@@ -2,8 +2,8 @@
 # 
 # The read file utility functions needed by both open_citi.py and lookup.py
 # 
-
-from .utility import logger
+import logging
+logger = logging.getLogger(__name__)
 
 
 

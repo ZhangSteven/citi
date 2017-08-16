@@ -14,7 +14,7 @@ class TestLookup(unittest2.TestCase):
 
 
     def test_isin_map(self):
-        self.assertEqual(len(isin_map), 16)
+        self.assertEqual(len(isin_map), 45)
         self.assertEqual(isin_map['BF04Y37'], 'XS1562292026')
         self.assertEqual(isin_map['BF08G22'], 'XS1573134878')
         self.assertEqual(isin_map['BF282K0'], 'XS1572322409')
