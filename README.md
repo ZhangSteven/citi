@@ -1,6 +1,11 @@
 # citi
 Convert Citibank custodian files to Geneva format
 
+++++++++++++++++++
+ver 0.1101@2017-8-16
+++++++++++++++++++
+1. Fixed bug: harded coded file path in test cases, failed in a different computer. Use os.path to workout the path.
+
 
 
 ++++++++++++++++++
