@@ -20,46 +20,47 @@ class TestCiti(unittest2.TestCase):
 
 
     def test_read_fields(self):
-        file_name = os.path.join(get_current_directory(), 'samples', 'STA 20170407.xls')
+        file_name = os.path.join(get_current_directory(), 'samples', 'STA1_20171017.xlsx')
         wb = open_workbook(filename=file_name)
-        ws = wb.sheet_by_name('Holdings Report')
+        ws = wb.sheet_by_name('Holdings Report ISIN')
         fields = read_fields(ws, 0, 1)
-        self.assertEqual(len(fields), 17)
+        self.assertEqual(len(fields), 23)
         self.assertEqual(fields[0], 'Asset Group')
         self.assertEqual(fields[1], 'Security ID')
-        self.assertEqual(fields[2], 'Security Description')
-        self.assertEqual(fields[3], 'Long/Short Indicator')
-        self.assertEqual(fields[4], 'Shares/Par')
-        self.assertEqual(fields[5], 'Curr')
-        self.assertEqual(fields[15], 'Accounting Price  (Local CCY)')
-        self.assertEqual(fields[16], 'FX Rate')
+        self.assertEqual(fields[2], 'ISIN')
+        self.assertEqual(fields[3], 'Security Description')
+        self.assertEqual(fields[4], 'Long/Short Indicator')
+        self.assertEqual(fields[5], 'Shares/Par')
+        self.assertEqual(fields[6], 'Curr')
+        self.assertEqual(fields[16], 'Accounting Price  (Local CCY)')
+        self.assertEqual(fields[17], 'FX Rate')
 
 
 
     def test_read_grand_total(self):
-        file_name = os.path.join(get_current_directory(), 'samples', 'STA 20170407.xls')
+        file_name = os.path.join(get_current_directory(), 'samples', 'STA1_20171017.xlsx')
         wb = open_workbook(filename=file_name)
-        ws = wb.sheet_by_name('Holdings Report')
+        ws = wb.sheet_by_name('Holdings Report ISIN')
         fields = read_fields(ws, 0, 1)
-        self.assertAlmostEqual(read_grand_total(ws, 0, 1, fields, 'Shares/Par'), 70300000)
+        self.assertAlmostEqual(read_grand_total(ws, 0, 1, fields, 'Shares/Par'), 137080000)
 
 
 
     def test_read_holding(self):
-        file_name = os.path.join(get_current_directory(), 'samples', 'STA 20170407.xls')
+        file_name = os.path.join(get_current_directory(), 'samples', 'STA1_20171017.xlsx')
         wb = open_workbook(filename=file_name)
-        ws = wb.sheet_by_name('Holdings Report')
+        ws = wb.sheet_by_name('Holdings Report ISIN')
         fields = read_fields(ws, 0, 1)
         holding = read_holding(ws, fields, 1, 1)
-        self.assertEqual(len(holding), 22)
+        self.assertEqual(len(holding), 51)
         self.verify_position1(holding[0])
         self.verify_position2(holding[1])
-        self.verify_position3(holding[21])
+        self.verify_position3(holding[50])
 
 
 
     def test_read_cash(self):
-        file_name = os.path.join(get_current_directory(), 'samples', 'STA 20170407.xls')
+        file_name = os.path.join(get_current_directory(), 'samples', 'STA1_20171017.xlsx')
         wb = open_workbook(filename=file_name)
         ws = wb.sheet_by_name('Accrued Interest on Cash Accoun')
         fields = read_fields(ws, 0, 1)
@@ -70,113 +71,101 @@ class TestCiti(unittest2.TestCase):
 
 
     def test_open_citi(self):
-        file_name = os.path.join(get_current_directory(), 'samples', 'STA 20170407.xls')
+        file_name = os.path.join(get_current_directory(), 'samples', 'STA1_20171017.xlsx')
         port_values = {}
         output_dir = os.path.join(get_current_directory(), 'samples')
         file_list = open_citi(file_name, port_values, output_dir, 'star_helios_')
         holding = port_values['holding']
-        self.assertEqual(len(holding), 22)
-        self.verify_position1(holding[0], True)
-        self.verify_position2(holding[1], True)
-        self.verify_position3(holding[21], True)
+        self.assertEqual(len(holding), 51)
+        self.verify_position1(holding[0])
+        self.verify_position2(holding[1])
+        self.verify_position3(holding[50])
 
         cash = port_values['cash']
         self.assertEqual(len(cash), 1)
         self.verify_cash(cash[0])
 
-        self.assertEqual(get_portfolio_date(port_values), datetime.datetime(2017,4,10))
+        self.assertEqual(get_portfolio_date(port_values), datetime.datetime(2017,10,17))
         self.assertEqual(port_values['portfolio_id'], '40001')
         
         self.assertEqual(len(file_list), 2)
-        self.assertEqual(file_list[0], os.path.join(get_current_directory(), 'samples', 'star_helios_2017-4-10_cash.csv'))
-        self.assertEqual(file_list[1], os.path.join(get_current_directory(), 'samples', 'star_helios_2017-4-10_position.csv'))
+        self.assertEqual(file_list[0], os.path.join(get_current_directory(), 'samples', 'star_helios_2017-10-17_cash.csv'))
+        self.assertEqual(file_list[1], os.path.join(get_current_directory(), 'samples', 'star_helios_2017-10-17_position.csv'))
 
 
 
-    def verify_position1(self, position, security_id_updated=False):
+    def verify_position1(self, position):
         """
-        Verify the first postion in samples/STA 20170407.xls
+        Verify the first postion in samples/STA1_20171017.xlsx
         """
-        if security_id_updated:
-            self.assertEqual(len(position), 18)  # isin field is added
-        else:
-            self.assertEqual(len(position), 17)
+        self.assertEqual(len(position), 23)
 
         self.assertEqual(position['Asset Group'], 'BONDS')
-        self.assertEqual(position['Security ID'], 'BDC4MV5')
-        self.assertEqual(position['Security Description'], 'LENOVO PERPETUAL LENOVO 5 3/8 PERP')
+        self.assertEqual(position['Security ID'], 'BCRW3Z8')
+        self.assertEqual(position['ISIN'], 'USG24524AH67')
+        self.assertEqual(position['Security Description'], 'COUNTRY GARDEN COGARD 7 1/4 04/04/21')
         self.assertEqual(position['Long/Short Indicator'], 'L')
-        self.assertAlmostEqual(position['Shares/Par'], 6800000)
+        self.assertAlmostEqual(position['Shares/Par'], 4000000)
         self.assertEqual(position['Curr'], 'USD')
-        self.assertAlmostEqual(position['Original Cost (Local)'], 6810800)
-        self.assertAlmostEqual(position['Original Cost (Base)'], 46955110.64)
+        self.assertAlmostEqual(position['Original Cost (Local)'], 4154000)
+        self.assertAlmostEqual(position['Original Cost (Base)'], 28254114.72)
         self.assertEqual(position['Amortized Cost (Local)'], '')
-        self.assertAlmostEqual(position['Position Accounting Market Value (Local CCY)'], 6908324)
-        self.assertAlmostEqual(position['Accounting Price  (Local CCY)'], 101.593)
-        self.assertAlmostEqual(position['FX Rate'], 6.9068882396)
-        if security_id_updated:
-            self.assertEqual(position['isin'], 'XS1575529539')
+        self.assertAlmostEqual(position['Position Accounting Market Value (Local CCY)'], 4170012)
+        self.assertAlmostEqual(position['Accounting Price  (Local CCY)'], 104.2503)
+        self.assertAlmostEqual(position['FX Rate'], 6.6161632869)
 
 
 
-    def verify_position2(self, position, security_id_updated=False):
+    def verify_position2(self, position):
         """
-        Verify the second postion in samples/STA 20170407.xls
+        Verify the second postion in samples/STA1_20171017.xlsx
         """
-        if security_id_updated:
-            self.assertEqual(len(position), 18)  # isin field is added
-        else:
-            self.assertEqual(len(position), 17)
+        self.assertEqual(len(position), 23)
         self.assertEqual(position['Asset Group'], '')
-        self.assertEqual(position['Security ID'], 'BDF16K0')
-        self.assertEqual(position['Security Description'], 'HUARONG FIN II HRAM 4 5/8 06/03/26')
+        self.assertEqual(position['Security ID'], 'BDDWMY1')
+        self.assertEqual(position['ISIN'], 'USG2120QAC09')
+        self.assertEqual(position['Security Description'], 'CHINASOUTH POWER SOPOWZ 3 1/2 05/08/27')
         self.assertEqual(position['Long/Short Indicator'], 'L')
         self.assertAlmostEqual(position['Shares/Par'], 2000000)
         self.assertEqual(position['Curr'], 'USD')
-        self.assertAlmostEqual(position['Original Cost (Local)'], 2030000)
-        self.assertAlmostEqual(position['Original Cost (Base)'], 13913544.12)
+        self.assertAlmostEqual(position['Original Cost (Local)'], 2051460)
+        self.assertAlmostEqual(position['Original Cost (Base)'], 13537415.86)
         self.assertEqual(position['Amortized Cost (Local)'], '')
-        self.assertAlmostEqual(position['Position Accounting Market Value (Local CCY)'], 2021662)
-        self.assertAlmostEqual(position['Accounting Price  (Local CCY)'], 101.0831)
-        self.assertAlmostEqual(position['FX Rate'], 6.9068882396)
-        if security_id_updated:
-            self.assertEqual(position['isin'], 'XS1422790615')
+        self.assertAlmostEqual(position['Position Accounting Market Value (Local CCY)'], 2044050)
+        self.assertAlmostEqual(position['Accounting Price  (Local CCY)'], 102.2025)
+        self.assertAlmostEqual(position['FX Rate'], 6.6161632869)
 
 
 
     def verify_position3(self, position, security_id_updated=False):
         """
-        Verify the last postion in samples/STA 20170407.xls
+        Verify the last postion in samples/STA1_20171017.xlsx
         """
-        if security_id_updated:
-            self.assertEqual(len(position), 18)  # isin field is added
-        else:
-            self.assertEqual(len(position), 17)
+        self.assertEqual(len(position), 23)
         self.assertEqual(position['Asset Group'], '')
-        self.assertEqual(position['Security ID'], 'XS1587894343')
-        self.assertEqual(position['Security Description'], 'TEWOO GROUP TEWOOG 4 5/8 04/06/20')
+        self.assertEqual(position['Security ID'], 'XS1688369617')
+        self.assertEqual(position['ISIN'], 'XS1688369617')
+        self.assertEqual(position['Security Description'], 'KAISA GROUP KAISAG 8 1/2 06/30/22')
         self.assertEqual(position['Long/Short Indicator'], 'L')
-        self.assertAlmostEqual(position['Shares/Par'], 2400000)
+        self.assertAlmostEqual(position['Shares/Par'], 2000000)
         self.assertEqual(position['Curr'], 'USD')
-        self.assertAlmostEqual(position['Original Cost (Local)'], 2383464)
-        self.assertAlmostEqual(position['Original Cost (Base)'], 16380070.1)
+        self.assertAlmostEqual(position['Original Cost (Local)'], 2006000)
+        self.assertAlmostEqual(position['Original Cost (Base)'], 13201711.09)
         self.assertEqual(position['Amortized Cost (Local)'], '')
-        self.assertAlmostEqual(position['Position Accounting Market Value (Local CCY)'], 2419219.2)
-        self.assertAlmostEqual(position['Accounting Price  (Local CCY)'], 100.8008)
-        self.assertAlmostEqual(position['FX Rate'], 6.9068882396)
-        if security_id_updated:
-            self.assertEqual(position['isin'], 'XS1587894343')
+        self.assertAlmostEqual(position['Position Accounting Market Value (Local CCY)'], 2008140)
+        self.assertAlmostEqual(position['Accounting Price  (Local CCY)'], 100.407)
+        self.assertAlmostEqual(position['FX Rate'], 6.6161632869)
 
 
 
     def verify_cash(self, position):
         """
-        Verify the cash position in samples/STA 20170407.xls
+        Verify the cash position in samples/STA1_20171017.xlsx
         """
         self.assertEqual(len(position), 8)
         self.assertEqual(position['Local CCY'], 'USD')
-        self.assertAlmostEqual(position['Position Accounting Market Value (Local CCY)'], 82456113.64)
+        self.assertAlmostEqual(position['Position Accounting Market Value (Local CCY)'], 9404448.39)
         self.assertAlmostEqual(position['Accrued Interest'], 0)
-        self.assertAlmostEqual(position['Exchange Rate'], 0.144783)
-        self.assertAlmostEqual(position['Accounting Market Value (VCY)'], 569515161.59)
-        self.assertEqual(position['As Of'], datetime.datetime(2017,4,10))
+        self.assertAlmostEqual(position['Exchange Rate'], 0.151145)
+        self.assertAlmostEqual(position['Accounting Market Value (VCY)'], 62221366.17)
+        self.assertEqual(position['As Of'], datetime.datetime(2017,10,17))

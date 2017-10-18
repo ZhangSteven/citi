@@ -1,6 +1,16 @@
 # citi
 Convert Citibank custodian files to Geneva format
 
+
+++++++++++++++++++
+ver 0.12@2017-10-18
+++++++++++++++++++
+1. Updated: citibank uses a new format, a new column "ISIN" is added, so the mapping from citibank id (actually SEDOL code) to ISIN is no longer needed, therefore we changed the open_citi.py code.
+
+2. After this change, lookup.py and samples/InvestmentCodeLookup.xlsx are no longer needed, therefore deleted. Also the corresponding test code are updated.
+
+
+
 ++++++++++++++++++
 ver 0.1101@2017-8-16
 ++++++++++++++++++

@@ -6,7 +6,6 @@
 
 from .utility import get_datemode, convert_datetime_to_string, \
 						get_csv_file_name
-from .lookup import lookup_isin_from_id
 from .read_file import read_holding, read_fields
 from xlrd import open_workbook, xldate
 import csv, os
@@ -34,9 +33,10 @@ def open_citi(filename, port_values, output_dir, output_prefix):
 	ws = wb.sheet_by_name('Index Page')
 	port_values['portfolio_id'] = get_portfolio_id(ws)
 
-	ws = wb.sheet_by_name('Holdings Report')
+	ws = wb.sheet_by_name('Holdings Report ISIN')
 	fields = read_fields(ws, 0, 1)
-	port_values['holding'] = update_security_id(read_holding(ws, fields, 1, 1))
+	# port_values['holding'] = update_security_id(read_holding(ws, fields, 1, 1))
+	port_values['holding'] = read_holding(ws, fields, 1, 1)
 	validate_holding(port_values['holding'], ws, 0, 1, fields, 'Shares/Par')
 
 	ws = wb.sheet_by_name('Accrued Interest on Cash Accoun')
@@ -70,18 +70,18 @@ def get_portfolio_id(ws):
 
 
 
-def update_security_id(holding):
-	"""
-	Update security id. As Citibank uses its own id for certain securities,
-	e.g., BF04Y37, BEIPRO 4.375 03/08/20
+# def update_security_id(holding):
+# 	"""
+# 	Update security id. As Citibank uses its own id for certain securities,
+# 	e.g., BF04Y37, BEIPRO 4.375 03/08/20
 
-	We need to map that id "BF04Y37" to the bond's isin code "XS1562292026".
-	"""
-	logger.debug('update_security_id(): start')
-	for position in holding:
-		position['isin'] = lookup_isin_from_id(position['Security ID'])
+# 	We need to map that id "BF04Y37" to the bond's isin code "XS1562292026".
+# 	"""
+# 	logger.debug('update_security_id(): start')
+# 	for position in holding:
+# 		position['isin'] = lookup_isin_from_id(position['Security ID'])
 
-	return holding
+# 	return holding
 
 
 
@@ -209,7 +209,7 @@ def write_holding_csv(port_values, output_dir, output_prefix):
 
 		# except for name, all fields are mandatory to do a position recon
 		# in Geneva
-		fields = ['geneva_investment_id', 'isin', 'bloomberg_figi', 'name', 
+		fields = ['geneva_investment_id', 'ISIN', 'bloomberg_figi', 'name', 
 					'currency', 'quantity']
 		file_writer.writerow(['portfolio', 'custodian', 'date'] + fields)
 
