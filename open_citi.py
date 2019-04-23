@@ -95,7 +95,8 @@ def update_cash_data(cash_accounts):
 	"""
 	logger.debug('update_cash_data(): start')
 	c_map = {
-		'US DOLLAR':'USD'
+		'US DOLLAR':'USD',
+		'CHINESE RENMINBI YUAN':'CNH'	# star helios uses CNH not CNY
 	}
 
 	for account in cash_accounts:
