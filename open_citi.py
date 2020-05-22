@@ -99,7 +99,7 @@ def update_cash_data(cash_accounts):
 		'CHINESE RENMINBI YUAN':'CNH'	# star helios uses CNH not CNY
 	}
 
-	for account in cash_accounts:
+	for account in filter(lambda acc: acc['Local CCY'] != '', cash_accounts):
 		logger.debug('update_cash_data(): {0}, amount {1}'.\
 						format(account['Local CCY'], account['Position Accounting Market Value (Local CCY)']))
 		account['As Of'] = xldate.xldate_as_datetime(account['As Of'], get_datemode())
